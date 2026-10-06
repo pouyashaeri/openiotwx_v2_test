@@ -21,7 +21,7 @@ export function SiteHeader() {
             openiotwx<span className="text-blue-300">/</span>
           </span>
         </Link>
-        <nav aria-label="Primary" className="flex items-center gap-1">
+        <nav aria-label="Primary" className="flex items-center sm:gap-1">
           {LINKS.map((item) => {
             const active = path === item.to;
             return (
@@ -29,7 +29,7 @@ export function SiteHeader() {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-sm transition-colors",
+                  "rounded-md px-2 py-1.5 text-[13px] transition-colors sm:px-3 sm:text-sm",
                   active ? "bg-white/15 text-white" : "text-blue-100/75 hover:text-white",
                 )}
                 aria-current={active ? "page" : undefined}
@@ -40,7 +40,7 @@ export function SiteHeader() {
           })}
           <a
             href={FLASHER_ROOT}
-            className="rounded-md px-3 py-1.5 font-mono text-sm text-blue-200 transition-colors hover:text-white"
+            className="rounded-md px-2 py-1.5 text-[13px] text-blue-100/75 transition-colors hover:text-white sm:px-3 sm:text-sm"
           >
             Flash
           </a>

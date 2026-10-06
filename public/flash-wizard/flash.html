@@ -111,12 +111,20 @@
 </head>
 <body>
 
-<header>
-  <div class="logo">IoTwx<span>/</span>mesonet</div>
-  <div style="width:1px;height:16px;background:var(--border);margin:0 4px;"></div>
-  <h1>Station Setup</h1>
-  <nav class="site-nav" aria-label="Site"><a href="../">Home</a><a href="../plan">Your plan</a><a href="../library">Library</a></nav>
-  <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode" type="button">🌙</button>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="../" class="site-logo">
+      <span class="site-logo-mark"><span></span></span>
+      <span class="site-logo-text">openiotwx<em>/</em></span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="../wizard">Wizard</a>
+      <a href="../plan">Plan</a>
+      <a href="../library">Library</a>
+      <a href="index.html" aria-current="page" class="active">Flash</a>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle light/dark mode" type="button">🌙</button>
+    </nav>
+  </div>
 </header>
 
 <div class="steps">

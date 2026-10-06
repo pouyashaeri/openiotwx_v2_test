@@ -31,21 +31,38 @@ body { font-family: var(--font-sans); line-height: 1.5; -webkit-font-smoothing: 
 h1, .page-title { letter-spacing: -0.02em; }
 .page-title { font-size: 28px; font-weight: 650; }
 
-/* Header: always navy, like the main site */
-header {
-  background: var(--navy); border-bottom: 1px solid rgb(255 255 255 / 0.1);
-  color: #fff; position: sticky; top: 0; z-index: 20;
+/* Header: identical to the main site header (navy bar, logo mark, mono wordmark, pill links) */
+header.site-header {
+  display: block; padding: 0; position: sticky; top: 0; z-index: 30;
+  background: rgb(7 21 48 / 0.95); backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgb(255 255 255 / 0.1); color: #fff;
 }
-header h1 { color: #fff; font-weight: 500; font-size: 14px; }
-header .logo { color: #fff; font-size: 15px; font-weight: 600; letter-spacing: 0; }
-header .logo span { color: #93c5fd; }
-header .site-nav { display: flex; gap: 4px; margin-left: 12px; }
-header .site-nav a {
-  color: rgb(219 234 254 / 0.8); text-decoration: none; font-size: 13px;
-  padding: 5px 10px; border-radius: 6px;
+.site-header-inner {
+  max-width: 64rem; margin: 0 auto; padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-header .site-nav a:hover { color: #fff; background: rgb(255 255 255 / 0.1); }
-header .theme-toggle { background: rgb(255 255 255 / 0.08); border-color: rgb(255 255 255 / 0.2); }
+.site-logo { display: flex; align-items: center; gap: 10px; min-width: 0; color: #fff; text-decoration: none; }
+.site-logo-mark {
+  width: 32px; height: 32px; flex-shrink: 0; border-radius: 6px; background: #1649c9;
+  display: grid; place-items: center;
+}
+.site-logo-mark span { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff; }
+.site-logo-text {
+  font-family: var(--font-mono); font-size: 16px; font-weight: 600; line-height: 1;
+  letter-spacing: -0.025em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.site-logo-text em { font-style: normal; color: #93c5fd; }
+header.site-header .site-nav { display: flex; align-items: center; gap: 4px; margin: 0; }
+header.site-header .site-nav a {
+  color: rgb(219 234 254 / 0.75); text-decoration: none; font-size: 14px; line-height: 20px;
+  padding: 6px 12px; border-radius: 6px; transition: color 0.15s;
+}
+header.site-header .site-nav a:hover { color: #fff; background: none; }
+header.site-header .site-nav a.active { background: rgb(255 255 255 / 0.15); color: #fff; }
+header.site-header .theme-toggle {
+  margin-left: 8px; width: 30px; height: 30px; font-size: 14px;
+  background: rgb(255 255 255 / 0.08); border-color: rgb(255 255 255 / 0.2);
+}
 
 .btn-primary, .btn-primary:hover { color: var(--on-accent); }
 .spinner { border-color: rgb(128 128 128 / 0.35); border-top-color: var(--on-accent); }
@@ -77,7 +94,9 @@ label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; 
 }
 
 @media (max-width: 640px) {
-  header { padding: 12px 16px; flex-wrap: wrap; }
+  header.site-header .site-nav { gap: 0; }
+  header.site-header .site-nav a { padding: 6px 8px; font-size: 13px; }
+  .site-logo-text { font-size: 15px; }
   .steps { padding: 14px 16px; }
   main { padding: 28px 16px 64px; }
   .device-picker { grid-template-columns: 1fr; }
@@ -92,4 +111,9 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+/* Phones: keep the full wordmark visible, as on the main site */
+@media (max-width: 480px) {
+  header.site-header .theme-toggle { display: none; }
 }
