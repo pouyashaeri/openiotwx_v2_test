@@ -59,6 +59,7 @@ header.site-header .site-nav a {
 }
 header.site-header .site-nav a:hover { color: #fff; background: none; }
 header.site-header .site-nav a.active { background: rgb(255 255 255 / 0.15); color: #fff; }
+header.site-header .theme-toggle[hidden] { display: none; }
 header.site-header .theme-toggle {
   margin-left: 8px; width: 30px; height: 30px; font-size: 14px;
   background: rgb(255 255 255 / 0.08); border-color: rgb(255 255 255 / 0.2);
@@ -96,7 +97,6 @@ label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; 
 @media (max-width: 640px) {
   header.site-header .site-nav { gap: 0; }
   header.site-header .site-nav a { padding: 6px 8px; font-size: 13px; }
-  .site-logo-text { font-size: 15px; }
   .steps { padding: 14px 16px; }
   main { padding: 28px 16px 64px; }
   .device-picker { grid-template-columns: 1fr; }
