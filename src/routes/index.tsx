@@ -15,6 +15,7 @@ function Home() {
   const hydrated = useDraft((state) => state.hydrated);
   const siteName = useDraft((state) => state.siteName);
   const intent = useDraft((state) => state.answers.intent);
+  const step = useDraft((state) => state.step);
   const reset = useDraft((state) => state.reset);
   const setIntent = useDraft((state) => state.setIntent);
   const setStep = useDraft((state) => state.setStep);
@@ -100,7 +101,9 @@ function Home() {
                 </p>
                 <div className="flex items-center gap-2">
                   <Link
-                    to="/plan"
+                    // Resume where they stopped. The plan page only has something to show once
+                    // the wizard reaches the review step.
+                    to={step === "review" ? "/plan" : "/wizard"}
                     className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand px-4 text-sm font-medium text-surface hover:bg-brand-deep"
                   >
                     Continue the draft
