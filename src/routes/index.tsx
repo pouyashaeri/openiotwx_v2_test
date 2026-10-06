@@ -20,8 +20,12 @@ function Home() {
   const setStep = useDraft((state) => state.setStep);
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
+  // Set the moment an option is chosen, so the "draft on this device" banner never flashes
+  // while the page transitions to the questions.
+  const [starting, setStarting] = useState(false);
 
   function begin(id: Intent) {
+    setStarting(true);
     reset();
     setIntent(id);
     setStep("place");
@@ -56,15 +60,11 @@ function Home() {
               read the docs →
             </Link>
           </div>
-          <pre className="mt-10 hidden max-w-md overflow-x-auto rounded-md border border-white/10 bg-black/30 px-4 py-3 text-xs leading-relaxed text-blue-100/90 sm:block">{`$ iotwx plan --site "ridge-01"
-> link      cellular
-> measures  temp, rh, pressure
-> status    ready to print ✓`}</pre>
         </div>
       </section>
 
       <div id="start" className="mx-auto max-w-5xl scroll-mt-16 px-4 py-10 sm:py-14">
-        {hydrated && intent ? (
+        {hydrated && intent && !starting ? (
           <div className="no-print mb-8 flex flex-col gap-3 rounded-lg border border-line bg-brand-soft px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
             {confirming ? (
               <>
