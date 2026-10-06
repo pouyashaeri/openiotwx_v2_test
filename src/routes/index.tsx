@@ -1,4 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { X } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { ChoiceCard } from "@/components/choice-card";
 import { INTENTS } from "@/lib/wizard/catalog";
 import { useDraft } from "@/lib/wizard/store";
@@ -16,6 +19,7 @@ function Home() {
   const setIntent = useDraft((state) => state.setIntent);
   const setStep = useDraft((state) => state.setStep);
   const navigate = useNavigate();
+  const [confirming, setConfirming] = useState(false);
 
   function begin(id: Intent) {
     reset();
@@ -62,15 +66,57 @@ function Home() {
       <div id="start" className="mx-auto max-w-5xl scroll-mt-16 px-4 py-10 sm:py-14">
         {hydrated && intent ? (
           <div className="no-print mb-8 flex flex-col gap-3 rounded-lg border border-line bg-brand-soft px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm">
-              A draft is already on this device{siteName ? ` for ${siteName}` : ""}.
-            </p>
-            <Link
-              to="/plan"
-              className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand px-4 text-sm font-medium text-surface hover:bg-brand-deep"
-            >
-              Continue the draft
-            </Link>
+            {confirming ? (
+              <>
+                <p className="text-sm">
+                  Discard this draft{siteName ? ` for ${siteName}` : ""}? This clears it from this
+                  device.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand px-4 text-sm font-medium text-surface hover:bg-brand-deep"
+                    onClick={() => {
+                      reset();
+                      setConfirming(false);
+                      toast("Draft discarded. Start a new one below.");
+                    }}
+                  >
+                    Discard
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex min-h-11 items-center justify-center rounded-md border border-line bg-surface px-4 text-sm"
+                    onClick={() => setConfirming(false)}
+                  >
+                    Keep it
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm">
+                  A draft is already on this device{siteName ? ` for ${siteName}` : ""}.
+                </p>
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/plan"
+                    className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand px-4 text-sm font-medium text-surface hover:bg-brand-deep"
+                  >
+                    Continue the draft
+                  </Link>
+                  <button
+                    type="button"
+                    aria-label="Discard draft"
+                    title="Discard draft"
+                    onClick={() => setConfirming(true)}
+                    className="grid size-11 place-items-center rounded-md border border-line bg-surface text-muted transition-colors hover:border-brand hover:text-ink"
+                  >
+                    <X className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ) : null}
 
