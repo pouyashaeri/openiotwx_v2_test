@@ -1,0 +1,95 @@
+/* Site theme for the web flasher: deep blue + white, Inter + JetBrains Mono.
+   Loaded after each page's inline <style>, so it only overrides look, never behavior. */
+:root {
+  --bg: #071530;
+  --surface: #0d2147;
+  --border: #213b6e;
+  --accent: #6ea8ff;
+  --accent2: #4ade80;
+  --text: #eaf1ff;
+  --muted: #9db0d3;
+  --danger: #ff7b72;
+  --warn: #e3b341;
+  --radius: 8px;
+  --navy: #071530;
+  --on-accent: #071530;
+}
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --surface: #eef3fb;
+  --border: #d5deee;
+  --accent: #1649c9;
+  --accent2: #15803d;
+  --text: #0a1a3a;
+  --muted: #475a7a;
+  --danger: #b42318;
+  --warn: #b45309;
+  --on-accent: #ffffff;
+}
+
+body { font-family: var(--font-sans); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+h1, .page-title { letter-spacing: -0.02em; }
+.page-title { font-size: 28px; font-weight: 650; }
+
+/* Header: always navy, like the main site */
+header {
+  background: var(--navy); border-bottom: 1px solid rgb(255 255 255 / 0.1);
+  color: #fff; position: sticky; top: 0; z-index: 20;
+}
+header h1 { color: #fff; font-weight: 500; font-size: 14px; }
+header .logo { color: #fff; font-size: 15px; font-weight: 600; letter-spacing: 0; }
+header .logo span { color: #93c5fd; }
+header .site-nav { display: flex; gap: 4px; margin-left: 12px; }
+header .site-nav a {
+  color: rgb(219 234 254 / 0.8); text-decoration: none; font-size: 13px;
+  padding: 5px 10px; border-radius: 6px;
+}
+header .site-nav a:hover { color: #fff; background: rgb(255 255 255 / 0.1); }
+header .theme-toggle { background: rgb(255 255 255 / 0.08); border-color: rgb(255 255 255 / 0.2); }
+
+.btn-primary, .btn-primary:hover { color: var(--on-accent); }
+.spinner { border-color: rgb(128 128 128 / 0.35); border-top-color: var(--on-accent); }
+.device-card:hover, .dropzone:hover { border-color: var(--accent); }
+.device-card.selected { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.serial-monitor { background: #020817; }
+label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; }
+.logo, .step-num, .fstep-num, .code { font-family: var(--font-mono); }
+
+/* "From your plan" banner shown on the setup page */
+.plan-banner {
+  display: flex; gap: 14px; align-items: flex-start;
+  border: 1px solid var(--accent); border-left-width: 4px; border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  padding: 14px 16px; margin-bottom: 24px; font-size: 13px; line-height: 1.5;
+}
+.plan-banner strong { color: var(--text); }
+.plan-banner .eyebrow {
+  display: block; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 4px;
+}
+.plan-banner a { color: var(--accent); }
+.device-card.not-recommended { opacity: 0.55; }
+.device-card.not-recommended:hover { opacity: 0.9; }
+.device-tag {
+  display: inline-block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent);
+  border-radius: 4px; padding: 1px 6px; margin-bottom: 8px;
+}
+
+@media (max-width: 640px) {
+  header { padding: 12px 16px; flex-wrap: wrap; }
+  .steps { padding: 14px 16px; }
+  main { padding: 28px 16px 64px; }
+  .device-picker { grid-template-columns: 1fr; }
+  .field-row, .field-row-3 { grid-template-columns: 1fr; }
+}
+
+/* Smooth hand-off between the main site and these pages (cross-document view transitions) */
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 260ms; animation-timing-function: ease; }
+header { view-transition-name: site-header; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}

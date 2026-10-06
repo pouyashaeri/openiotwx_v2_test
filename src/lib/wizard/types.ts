@@ -1,0 +1,71 @@
+export type Intent = "community" | "watch" | "teach" | "bench";
+export type PlaceId = "urban" | "edge" | "rural" | "extreme";
+export type LinkId = "poe" | "wifi" | "cell" | "lora" | "ham";
+export type MeasureId =
+  | "air"
+  | "rain"
+  | "wind"
+  | "soil"
+  | "pm"
+  | "co2"
+  | "ozone"
+  | "sun";
+export type CountId = 1 | 3 | 6;
+export type SurpriseId =
+  | "water"
+  | "heat"
+  | "air"
+  | "storm"
+  | "dry"
+  | "power"
+  | "picture";
+export type WhoId = "neighbors" | "school" | "land" | "coordinators" | "partners";
+export type ProgressId = "trust" | "ours" | "checklist" | "backup" | "practice";
+export type GapId = "nomeasure" | "control" | "owner" | "siting" | "upkeep";
+export type ConfigId = "A" | "B" | "C" | "D" | "E";
+export type StepId =
+  | "place"
+  | "link"
+  | "measures"
+  | "count"
+  | "surprises"
+  | "people"
+  | "review";
+
+export type Answers = {
+  intent: Intent | null;
+  place: PlaceId | null;
+  link: LinkId | null;
+  measures: MeasureId[];
+  sharp: boolean;
+  count: CountId | null;
+  surprises: SurpriseId[];
+  who: WhoId[];
+  progress: ProgressId[];
+  gaps: GapId[];
+};
+
+export type Goal = { id: string; text: string };
+
+export type GoalChange = {
+  id: string;
+  at: string;
+  from: string;
+  to: string;
+  why: string;
+};
+
+export function blankAnswers(): Answers {
+  return {
+    intent: null,
+    place: null,
+    link: null,
+    measures: [],
+    sharp: false,
+    count: null,
+    surprises: [],
+    who: [],
+    progress: [],
+    gaps: [],
+  };
+}
