@@ -117,3 +117,15 @@ html { scroll-behavior: smooth; }
 @media (max-width: 480px) {
   header.site-header .theme-toggle { display: none; }
 }
+
+/* Step bar: line up with the page's content column instead of the screen edge.
+   The setup page's column is 720px wide, the flash page's is 680px; both have 24px side padding. */
+:root { --col: 720px; }
+html:has(#configSummary) { --col: 680px; }
+.steps {
+  padding-left: max(24px, calc((100% - var(--col)) / 2 + 24px));
+  padding-right: max(24px, calc((100% - var(--col)) / 2 + 24px));
+}
+@media (max-width: 640px) {
+  .steps { padding-left: 16px; padding-right: 16px; }
+}

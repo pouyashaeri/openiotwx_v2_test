@@ -2,6 +2,7 @@ import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-r
 import { useEffect } from "react";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth/provider";
+import { ChatWidget } from "@/components/chat-widget";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { useDraft } from "@/lib/wizard/store";
@@ -60,6 +61,7 @@ function Root() {
           <SiteHeader />
           <Outlet />
           <SiteFooter />
+          <ChatWidget />
           <Toaster position="bottom-center" />
         </AuthProvider>
         <Scripts />
