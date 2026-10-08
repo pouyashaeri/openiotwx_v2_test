@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ChoiceCard } from "@/components/choice-card";
 import { INTENTS } from "@/lib/wizard/catalog";
+import ncarLogo from "@/assets/ncar-logo.png";
 import { useDraft } from "@/lib/wizard/store";
 import type { Intent } from "@/lib/wizard/types";
 
@@ -36,9 +37,17 @@ function Home() {
   return (
     <main id="content">
       <section className="grid-bg text-white">
-        <div className="mx-auto max-w-5xl px-4 py-14 sm:py-20">
-          <p className="font-mono text-xs uppercase tracking-widest text-blue-300">
-            NCAR · open environmental sensing
+        <div className="relative mx-auto max-w-5xl px-4 py-14 sm:py-20">
+          {/* The logo floats in the corner at every size, so its height never stretches this row. */}
+          <a
+            href="https://ncar.ucar.edu/"
+            aria-label="NCAR and UCAR"
+            className="absolute right-4 top-[3.25rem] transition-opacity hover:opacity-80 sm:top-[3.75rem]"
+          >
+            <img src={ncarLogo} alt="NCAR and UCAR" className="h-10 w-auto sm:h-12" />
+          </a>
+          <p className="max-w-[55%] font-mono text-xs uppercase tracking-widest text-blue-300 sm:max-w-none">
+            Open environmental sensing
           </p>
           <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.08] sm:text-6xl">
             Start with the place, not the parts list.
