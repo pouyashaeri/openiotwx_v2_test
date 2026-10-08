@@ -1,7 +1,8 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { MessageCircle, RotateCcw, Send, Settings, X } from "lucide-react";
+import { Maximize2, MessageCircle, Minimize2, RotateCcw, Send, Settings, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import chatAvatar from "@/assets/chat-avatar.png";
 import { DEFAULT_CONFIG, loadConfig, saveConfig } from "@/lib/chat/config";
 import {
   allIds,
@@ -44,6 +45,7 @@ export function ChatWidget() {
   const [status, setStatus] = useState<Status>("checking");
   const [statusNote, setStatusNote] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const modelDown = useRef(false);
   const nextId = useRef(1);
   const scroller = useRef<HTMLDivElement>(null);
@@ -103,10 +105,14 @@ export function ChatWidget() {
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (event: KeyboardEvent) => event.key === "Escape" && setOpen(false);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (expanded) setExpanded(false);
+      else setOpen(false);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, expanded]);
 
   const extractor = useMemo(
     () =>
@@ -211,7 +217,14 @@ export function ChatWidget() {
     <section
       role="dialog"
       aria-label="Plan your station by chatting"
-      className="no-print fixed inset-x-3 bottom-3 z-50 flex h-[min(38rem,calc(100dvh-5rem))] flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-2xl sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-[24rem]"
+      data-expanded={expanded}
+      className={cn(
+        "group/chat no-print fixed z-50 flex flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-2xl",
+        "transition-[width,height,right,bottom] duration-300 ease-out motion-reduce:transition-none",
+        expanded
+          ? "bottom-3 right-3 h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)]"
+          : "bottom-3 right-3 h-[min(42rem,calc(100dvh-5rem))] w-[calc(100%-1.5rem)] sm:bottom-5 sm:right-5 sm:w-[min(32rem,calc(100%-2.5rem))]",
+      )}
     >
       <header className="flex items-center justify-between gap-2 bg-navy px-4 py-3 text-white">
         <div className="min-w-0">
@@ -247,158 +260,176 @@ export function ChatWidget() {
           <IconButton label="Chat settings" onClick={() => setShowSettings((v) => !v)}>
             <Settings className="size-4" aria-hidden="true" />
           </IconButton>
+          <IconButton
+            label={expanded ? "Exit full screen" : "Full screen"}
+            onClick={() => setExpanded((v) => !v)}
+            className="hidden sm:grid"
+          >
+            {expanded ? (
+              <Minimize2 className="size-4" aria-hidden="true" />
+            ) : (
+              <Maximize2 className="size-4" aria-hidden="true" />
+            )}
+          </IconButton>
           <IconButton label="Close the chat" onClick={() => setOpen(false)}>
             <X className="size-4" aria-hidden="true" />
           </IconButton>
         </div>
       </header>
 
-      <div ref={scroller} className="flex-1 space-y-3 overflow-y-auto px-4 py-4" aria-live="polite">
-        {showSettings ? (
-          <Settings_ config={config} status={status} note={statusNote} onSave={saveSettings} />
-        ) : null}
+      <div ref={scroller} className="flex-1 overflow-y-auto px-4 py-4" aria-live="polite">
+        <div className="mx-auto w-full space-y-3 group-data-[expanded=true]/chat:max-w-3xl">
+          {showSettings ? (
+            <Settings_ config={config} status={status} note={statusNote} onSave={saveSettings} />
+          ) : null}
 
-        {messages.map((message) => (
-          <Bubble
-            key={message.id}
-            message={message}
-            animate={message.role === "bot" && message.id === lastBot?.id && typedId !== message.id}
-            onDone={() => setTypedId(message.id)}
-          />
-        ))}
+          {messages.map((message) => (
+            <Bubble
+              key={message.id}
+              message={message}
+              animate={
+                message.role === "bot" && message.id === lastBot?.id && typedId !== message.id
+              }
+              onDone={() => setTypedId(message.id)}
+            />
+          ))}
 
-        {busy ? (
-          <div
-            className="flex w-fit items-center gap-1 rounded-lg rounded-bl-sm bg-surface-2 px-3 py-3"
-            aria-label="Thinking"
-          >
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className="size-1.5 animate-bounce rounded-full bg-muted"
-                style={{ animationDelay: `${i * 120}ms` }}
-              />
-            ))}
-          </div>
-        ) : null}
-
-        {!busy && typingDone && done ? (
-          <div className="rounded-lg border border-line bg-brand-soft p-3 text-sm">
-            <p className="eyebrow">Your answers</p>
-            <dl className="mt-2 grid gap-1.5">
-              {rows.map((row) => (
-                <div
-                  key={`${row.key}-${row.label}`}
-                  className="grid grid-cols-[7rem_minmax(0,1fr)] gap-2"
-                >
-                  <dt className="text-muted">{row.label}</dt>
-                  <dd>{row.value}</dd>
-                </div>
-              ))}
-            </dl>
-            <button
-              type="button"
-              onClick={writePlan}
-              className="mt-3 min-h-11 w-full rounded-md bg-brand px-4 text-sm font-medium text-surface hover:bg-brand-deep"
-            >
-              Write my plan
-            </button>
-            {hasDraft ? (
-              <p className="mt-2 text-xs text-muted">
-                This replaces the draft saved on this device.
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-
-        {!busy && typingDone && asking && asking.options.length > 0 ? (
-          asking.kind === "multi" ? (
-            <div role="group" aria-label="Pick all that apply">
-              <p className="mb-2 text-xs text-muted">
-                Tap every one that applies, or type it, like “all of them except rain”.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  aria-pressed={picked.length === asking.options.length}
-                  onClick={() =>
-                    setPicked(picked.length === asking.options.length ? [] : allIds(asking.key))
-                  }
-                  className={cn(
-                    "rounded-md border px-3 py-1.5 text-xs font-medium",
-                    picked.length === asking.options.length
-                      ? "border-brand bg-brand text-surface"
-                      : "border-brand text-brand-deep hover:bg-brand-soft",
-                  )}
-                >
-                  All of them
-                </button>
-                {asking.options.map((option) => {
-                  const id = String(option.id);
-                  const on = picked.includes(id);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      title={option.hint}
-                      aria-pressed={on}
-                      onClick={() =>
-                        setPicked(on ? picked.filter((item) => item !== id) : [...picked, id])
-                      }
-                      className={cn(
-                        "rounded-md border px-3 py-1.5 text-left text-xs",
-                        on
-                          ? "border-brand bg-brand-soft text-ink"
-                          : "border-line bg-surface hover:border-brand",
-                      )}
-                    >
-                      {on ? "✓ " : ""}
-                      {option.title}
-                    </button>
-                  );
-                })}
+          {busy ? (
+            <div className="flex items-end gap-2">
+              <Avatar />
+              <div
+                className="flex w-fit items-center gap-1 rounded-lg rounded-bl-sm bg-surface-2 px-3 py-3"
+                aria-label="Thinking"
+              >
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="size-1.5 animate-bounce rounded-full bg-muted"
+                    style={{ animationDelay: `${i * 120}ms` }}
+                  />
+                ))}
               </div>
-              <div className="mt-3 flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={picked.length === 0}
-                  onClick={sendPicked}
-                  className="min-h-10 rounded-md bg-brand px-4 text-sm font-medium text-surface hover:bg-brand-deep disabled:opacity-40"
-                >
-                  {picked.length === 0 ? "Send selection" : `Send ${picked.length} selected`}
-                </button>
-                {asking.skippable ? (
+            </div>
+          ) : null}
+
+          {!busy && typingDone && done ? (
+            <div className="rounded-lg border border-line bg-brand-soft p-3 text-sm">
+              <p className="eyebrow">Your answers</p>
+              <dl className="mt-2 grid gap-1.5">
+                {rows.map((row) => (
+                  <div
+                    key={`${row.key}-${row.label}`}
+                    className="grid grid-cols-[7rem_minmax(0,1fr)] gap-2"
+                  >
+                    <dt className="text-muted">{row.label}</dt>
+                    <dd>{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <button
+                type="button"
+                onClick={writePlan}
+                className="mt-3 min-h-11 w-full rounded-md bg-brand px-4 text-sm font-medium text-surface hover:bg-brand-deep"
+              >
+                Write my plan
+              </button>
+              {hasDraft ? (
+                <p className="mt-2 text-xs text-muted">
+                  This replaces the draft saved on this device.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!busy && typingDone && asking && asking.options.length > 0 ? (
+            asking.kind === "multi" ? (
+              <div role="group" aria-label="Pick all that apply">
+                <p className="mb-2 text-xs text-muted">
+                  Tap every one that applies, or type it, like “all of them except rain”.
+                </p>
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => void send("skip")}
-                    className="min-h-10 rounded-md px-3 text-sm text-muted hover:text-ink"
+                    aria-pressed={picked.length === asking.options.length}
+                    onClick={() =>
+                      setPicked(picked.length === asking.options.length ? [] : allIds(asking.key))
+                    }
+                    className={cn(
+                      "rounded-md border px-3 py-1.5 text-xs font-medium",
+                      picked.length === asking.options.length
+                        ? "border-brand bg-brand text-surface"
+                        : "border-brand text-brand-deep hover:bg-brand-soft",
+                    )}
                   >
-                    Skip
+                    All of them
                   </button>
-                ) : null}
+                  {asking.options.map((option) => {
+                    const id = String(option.id);
+                    const on = picked.includes(id);
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        title={option.hint}
+                        aria-pressed={on}
+                        onClick={() =>
+                          setPicked(on ? picked.filter((item) => item !== id) : [...picked, id])
+                        }
+                        className={cn(
+                          "rounded-md border px-3 py-1.5 text-left text-xs",
+                          on
+                            ? "border-brand bg-brand-soft text-ink"
+                            : "border-line bg-surface hover:border-brand",
+                        )}
+                      >
+                        {on ? "✓ " : ""}
+                        {option.title}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={picked.length === 0}
+                    onClick={sendPicked}
+                    className="min-h-10 rounded-md bg-brand px-4 text-sm font-medium text-surface hover:bg-brand-deep disabled:opacity-40"
+                  >
+                    {picked.length === 0 ? "Send selection" : `Send ${picked.length} selected`}
+                  </button>
+                  {asking.skippable ? (
+                    <button
+                      type="button"
+                      onClick={() => void send("skip")}
+                      className="min-h-10 rounded-md px-3 text-sm text-muted hover:text-ink"
+                    >
+                      Skip
+                    </button>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Quick answers">
-              {asking.options.map((option) => (
-                <button
-                  key={String(option.id)}
-                  type="button"
-                  title={option.hint}
-                  onClick={() => void send(option.title)}
-                  className="rounded-md border border-line bg-surface px-3 py-1.5 text-left text-xs hover:border-brand hover:bg-brand-soft"
-                >
-                  {option.title}
-                </button>
-              ))}
-            </div>
-          )
-        ) : null}
+            ) : (
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Quick answers">
+                {asking.options.map((option) => (
+                  <button
+                    key={String(option.id)}
+                    type="button"
+                    title={option.hint}
+                    onClick={() => void send(option.title)}
+                    className="rounded-md border border-line bg-surface px-3 py-1.5 text-left text-xs hover:border-brand hover:bg-brand-soft"
+                  >
+                    {option.title}
+                  </button>
+                ))}
+              </div>
+            )
+          ) : null}
+        </div>
       </div>
 
       <form
         onSubmit={onSubmit}
-        className="flex items-center gap-2 border-t border-line bg-surface p-3"
+        className="flex items-center gap-2 border-t border-line bg-surface p-3 group-data-[expanded=true]/chat:px-[max(0.75rem,calc(50%-24rem))]"
       >
         <input
           ref={inputRef}
@@ -427,10 +458,12 @@ function IconButton({
   label,
   onClick,
   children,
+  className,
 }: {
   label: string;
   onClick: () => void;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
     <button
@@ -438,7 +471,10 @@ function IconButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="grid size-8 place-items-center rounded-md text-blue-100/80 hover:bg-white/10 hover:text-white"
+      className={cn(
+        "grid size-8 place-items-center rounded-md text-blue-100/80 hover:bg-white/10 hover:text-white",
+        className,
+      )}
     >
       {children}
     </button>
@@ -456,15 +492,32 @@ function Bubble({
 }) {
   if (message.role === "user") {
     return (
-      <div className="ml-auto w-fit max-w-[85%] rounded-lg rounded-br-sm bg-brand px-3 py-2 text-sm text-surface">
+      <div className="ml-auto w-fit max-w-[85%] rounded-lg rounded-br-sm bg-brand px-3 py-2 text-sm text-surface group-data-[expanded=true]/chat:text-base">
         {message.text}
       </div>
     );
   }
   return (
-    <div className="w-fit max-w-[90%] rounded-lg rounded-bl-sm bg-surface-2 px-3 py-2 text-sm text-ink">
-      {animate ? <Typed text={message.text} onDone={onDone} /> : message.text}
+    <div className="flex items-end gap-2">
+      <Avatar />
+      <div className="w-fit max-w-[calc(100%-3.5rem)] rounded-lg rounded-bl-sm bg-surface-2 px-3 py-2 text-sm text-ink group-data-[expanded=true]/chat:text-base">
+        {animate ? <Typed text={message.text} onDone={onDone} /> : message.text}
+      </div>
     </div>
+  );
+}
+
+/** The assistant's picture, beside everything it says. Decorative: the bubble carries the text. */
+function Avatar() {
+  return (
+    <img
+      src={chatAvatar}
+      alt=""
+      width={44}
+      height={44}
+      className="size-11 shrink-0 rounded-full group-data-[expanded=true]/chat:size-12"
+      draggable={false}
+    />
   );
 }
 
