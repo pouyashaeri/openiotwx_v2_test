@@ -1,5 +1,13 @@
 export type Intent = "community" | "watch" | "teach" | "bench";
-export type PlaceId = "urban" | "edge" | "rural" | "extreme";
+export type PlaceId =
+  | "indoors"
+  | "home"
+  | "farm"
+  | "urban"
+  | "edge"
+  | "rural"
+  | "extreme";
+export type PowerId = "outlet" | "solar";
 export type LinkId = "poe" | "wifi" | "cell" | "lora" | "ham";
 export type MeasureId =
   | "air"
@@ -35,6 +43,7 @@ export type StepId =
 export type Answers = {
   intent: Intent | null;
   place: PlaceId | null;
+  power: PowerId | null;
   link: LinkId | null;
   measures: MeasureId[];
   sharp: boolean;
@@ -59,6 +68,7 @@ export function blankAnswers(): Answers {
   return {
     intent: null,
     place: null,
+    power: null,
     link: null,
     measures: [],
     sharp: false,

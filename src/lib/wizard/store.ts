@@ -75,7 +75,12 @@ function sanitize(raw: unknown): Persisted | null {
   return {
     ...base,
     ...value,
-    answers: { ...base.answers, ...value.answers },
+    // "ham" is no longer offered; drafts saved with it fall back to the no-connection option.
+    answers: {
+      ...base.answers,
+      ...value.answers,
+      ...(value.answers.link === "ham" ? { link: "lora" as const } : {}),
+    },
     checks: value.checks ?? {},
     goals: Array.isArray(value.goals) ? value.goals : [],
     goalLog: Array.isArray(value.goalLog) ? value.goalLog : [],

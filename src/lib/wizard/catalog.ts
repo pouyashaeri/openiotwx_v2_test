@@ -6,6 +6,7 @@ import type {
   LinkId,
   MeasureId,
   PlaceId,
+  PowerId,
   ProgressId,
   SurpriseId,
   WhoId,
@@ -47,99 +48,128 @@ export const INTENTS: Choice<Intent>[] = [
 
 export const PLACES: Choice<PlaceId>[] = [
   {
-    id: "urban",
-    title: "In town",
-    body: "Buildings, power, and a network are close. A mast on a roof, a yard, or a campus quad.",
+    id: "indoors",
+    title: "Indoors, inside a building",
+    body: "A classroom, lab, office, workshop, or any room where the air inside matters.",
     icon: "building",
   },
   {
-    id: "edge",
-    title: "Edge of town",
-    body: "Wi-Fi thins out. A road, a shelter, or a site that is close to people but far from a router.",
+    id: "home",
+    title: "In, around, or near my home",
+    body: "A yard, porch, balcony, roof, or the side of the house.",
+    icon: "home",
+  },
+  {
+    id: "farm",
+    title: "In, around, or near my garden, farm, or livestock",
+    body: "Garden beds, fields, orchards, barns, or pasture.",
+    icon: "sprout",
+  },
+  {
+    id: "urban",
+    title: "Around town",
+    body: "A street, rooftop, school grounds, campus, or park.",
     icon: "sign",
   },
   {
-    id: "rural",
-    title: "Rural or hard to reach",
-    body: "Services are a trip away. Stations may need to hear each other without a building network.",
+    id: "edge",
+    title: "On the edge of town",
+    body: "A road, shelter, or lot just outside the built-up area.",
     icon: "trees",
   },
   {
+    id: "rural",
+    title: "Out in the countryside",
+    body: "A trail, ridge, field, or other spot that is a drive from the nearest building.",
+    icon: "mountain",
+  },
+  {
     id: "extreme",
-    title: "Beyond the usual network",
-    body: "Cell is unreliable or gone. Getting there is the hard part. Plan for power you carry in.",
+    title: "Somewhere remote or hard to reach",
+    body: "A mountain, shoreline, or wilderness site. Getting there takes real effort.",
     icon: "mountain",
   },
 ];
 
+export const POWERS: Choice<PowerId>[] = [
+  {
+    id: "outlet",
+    title: "A wall outlet nearby",
+    body: "The station plugs in with a USB power adapter.",
+    icon: "plug",
+  },
+  {
+    id: "solar",
+    title: "A solar panel",
+    body: "There is no outlet at the spot, so a solar panel keeps the station running.",
+    icon: "sun",
+  },
+];
+
+// Asked as step 2a, after power. Plain words only: the technical name for each option
+// (and the radio option used when none are available) is worked out in the plan.
 export const LINKS: Choice<LinkId>[] = [
   {
-    id: "poe",
-    title: "A network cable that also powers it",
-    body: "Ethernet with power on the same cable. Best beside a building that already has a drop.",
-    icon: "cable",
-  },
-  {
-    id: "wifi",
-    title: "Wi-Fi that actually reaches",
-    body: "A hotspot or building network you trust at the mast. Wall power or a small solar panel.",
-    icon: "wifi",
-  },
-  {
     id: "cell",
-    title: "A small cellular SIM",
-    body: "The station carries its own NB-IoT radio. For the edge of town, a shelter, or a long driveway.",
+    title: "Cellular service",
+    body: "Mobile phone coverage reaches the spot. The station uses a data SIM, like a phone does.",
     icon: "signal",
   },
   {
-    id: "lora",
-    title: "Radio between stations",
-    body: "LoRa can talk pair-to-pair with no gateway. LoRaWAN is there later if you add one.",
-    icon: "radio",
+    id: "wifi",
+    title: "Wi-Fi",
+    body: "You can connect to a Wi-Fi network right where the station will sit.",
+    icon: "wifi",
   },
   {
-    id: "ham",
-    title: "Far past cell, by amateur radio",
-    body: "Only if you already work with ham radio. This path is not ready to order or flash.",
-    icon: "antenna",
+    id: "poe",
+    title: "A wired network (LAN)",
+    body: "A network cable (Ethernet) runs to the spot. It can often carry power too.",
+    icon: "cable",
+  },
+  {
+    id: "lora",
+    title: "None of these are available where I want to place it",
+    body: "No cell service, Wi-Fi, or network cable at the spot. We will work out another way for the station to report in.",
+    icon: "pin",
   },
 ];
 
 export const MEASURES: Choice<MeasureId>[] = [
   {
     id: "air",
-    title: "The air around the site",
-    body: "Temperature, humidity, and pressure. Everyday parts also sniff volatile compounds.",
+    title: "Air: temperature and humidity",
+    body: "The basic weather picture, including air pressure.",
     icon: "thermo",
   },
   {
     id: "rain",
-    title: "Rain",
-    body: "A digital gauge on the Grove port. The first wiring map keeps it there.",
+    title: "Rainfall",
+    body: "How much rain falls at the site.",
     icon: "rain",
-  },
-  {
-    id: "wind",
-    title: "Wind",
-    body: "An ultrasonic anemometer on RS-485. Housing is specified. Firmware is not finished.",
-    icon: "wind",
   },
   {
     id: "soil",
     title: "Soil moisture",
-    body: "A wired probe for beds, fields, or a levee. Firmware for this probe is still in progress.",
+    body: "How wet or dry the ground is, for beds, fields, or a levee. The software for this sensor is still being finished.",
     icon: "sprout",
   },
   {
     id: "pm",
-    title: "Particles in the air",
-    body: "Fine dust and smoke. Useful when the air itself is what people notice.",
+    title: "Air quality",
+    body: "Fine dust and smoke in the air. Useful when the air itself is what people notice.",
     icon: "haze",
+  },
+  {
+    id: "wind",
+    title: "Wind",
+    body: "Wind speed and direction. The sensor is chosen, but its software is still being finished.",
+    icon: "wind",
   },
   {
     id: "co2",
     title: "Carbon dioxide",
-    body: "A room, a classroom, or a shelter where stale air matters.",
+    body: "Stale air in a room, a classroom, or a shelter.",
     icon: "gauge",
   },
   {
@@ -151,7 +181,7 @@ export const MEASURES: Choice<MeasureId>[] = [
   {
     id: "sun",
     title: "Sunlight and UV",
-    body: "How bright it is, and a UV reading beside it. Both are small Qwiic boards.",
+    body: "How bright it is, with a UV reading beside it.",
     icon: "rays",
   },
 ];
@@ -160,7 +190,7 @@ export const COUNTS: Choice<CountId>[] = [
   {
     id: 1,
     title: "One station",
-    body: "Learn the build, or watch a single mast.",
+    body: "Learn the build, or keep an eye on a single site.",
     icon: "one",
   },
   {

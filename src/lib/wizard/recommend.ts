@@ -48,6 +48,35 @@ function decline(
   return rows;
 }
 
+/** Sites close to buildings, where a network is usually within reach. */
+export function isNearBuildings(place: Answers["place"]): boolean {
+  return place === "urban" || place === "indoors" || place === "home";
+}
+
+/** The old "edge of town" case: close to people, far from a router. A farm usually behaves the same. */
+export function isMidRange(place: Answers["place"]): boolean {
+  return place === "edge" || place === "farm";
+}
+
+/** Panel size or plug, in the person's own terms, when they told us how the station is powered. */
+function powerFor(
+  configId: Exclude<ConfigId, "E">,
+  answers: Answers,
+  fallback: string,
+): string {
+  if (answers.power === "outlet") {
+    // Power over the network cable is still the plan when the PoE base is in play.
+    return fallback.startsWith("Power over Ethernet")
+      ? fallback
+      : "A wall outlet with a USB power adapter";
+  }
+  if (answers.power === "solar") {
+    const panel = configId === "C" ? "about 20 W" : configId === "D" ? "about 10 W" : "6–10 W";
+    return `A solar panel, ${panel}`;
+  }
+  return fallback;
+}
+
 function placeTension(answers: Answers): string | null {
   if (
     (answers.place === "rural" || answers.place === "extreme") &&
@@ -58,7 +87,7 @@ function placeTension(answers: Answers): string | null {
   if (answers.place === "extreme" && answers.link === "cell") {
     return "Cellular at a site you called beyond the usual network is a gamble. If the SIM cannot register there, the radio build is the fallback.";
   }
-  if (answers.place === "urban" && answers.link === "lora") {
+  if (isNearBuildings(answers.place) && answers.link === "lora") {
     return "Radio is a fair choice in town when stations should hear each other instead of depending on a building network.";
   }
   return null;
@@ -96,7 +125,7 @@ export function recommend(answers: Answers): Recommendation {
     reasons: [...reasons, ...extra],
     declined: decline(configId, declined, experimental),
     ports,
-    power,
+    power: powerFor(configId, answers, power),
     baseLine,
     baseCents,
     includePoeBase,

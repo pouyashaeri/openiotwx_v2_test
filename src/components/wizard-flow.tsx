@@ -8,6 +8,7 @@ import {
   LINKS,
   MEASURES,
   PLACES,
+  POWERS,
   PROGRESS,
   SURPRISES,
   WHO,
@@ -122,7 +123,7 @@ export function WizardFlow() {
 
   function canContinue(id: StepId): boolean {
     if (id === "place") return Boolean(answers.place);
-    if (id === "link") return Boolean(answers.link);
+    if (id === "link") return Boolean(answers.power) && Boolean(answers.link);
     if (id === "measures") return answers.measures.length > 0;
     if (id === "count") return Boolean(answers.count);
     if (id === "surprises") return answers.surprises.length > 0;
@@ -183,8 +184,8 @@ function StepBody({
     return (
       <StepFrame
         kicker="The place"
-        title="Where will it live?"
-        body="This is about the site, not a catalog of boards."
+        title="Where will your station be placed?"
+        body="A station is a small sensor box you build and install, indoors or out. Pick the setting closest to yours."
       >
         <div className="grid gap-3">
           {PLACES.map((item) => (
@@ -204,22 +205,44 @@ function StepBody({
   if (step === "link") {
     return (
       <StepFrame
-        kicker="Staying in touch"
-        title="How will it stay powered and heard?"
-        body="Pick the link that is real at the mast, not the one you hope to add later."
+        kicker="Power and connection"
+        title="How will your station be powered?"
+        body="Pick what is really available at the spot, not what you hope to add later."
       >
         <div className="grid gap-3">
-          {LINKS.map((item) => (
+          {POWERS.map((item) => (
             <ChoiceCard
               key={item.id}
               icon={item.icon}
               title={item.title}
               body={item.body}
-              selected={answers.link === item.id}
-              onSelect={() => onPatch({ link: item.id })}
+              selected={answers.power === item.id}
+              onSelect={() => onPatch({ power: item.id })}
             />
           ))}
         </div>
+        <section className="mt-10" aria-labelledby="comms-title">
+          <p className="eyebrow">Step 2a</p>
+          <h2 id="comms-title" className="mt-2 text-2xl">
+            What communication technology is available?
+          </h2>
+          <p className="mt-2 max-w-xl text-muted">
+            This is how your station will send its readings. Choose the one that works where you
+            want to place it.
+          </p>
+          <div className="mt-4 grid gap-3">
+            {LINKS.map((item) => (
+              <ChoiceCard
+                key={item.id}
+                icon={item.icon}
+                title={item.title}
+                body={item.body}
+                selected={answers.link === item.id}
+                onSelect={() => onPatch({ link: item.id })}
+              />
+            ))}
+          </div>
+        </section>
       </StepFrame>
     );
   }
@@ -227,8 +250,8 @@ function StepBody({
     return (
       <StepFrame
         kicker="What to notice"
-        title="What should the station pay attention to?"
-        body="Choose every reading that matters. You can drop one later."
+        title="What data should your station collect?"
+        body="Choose every community measurement that matters to you. You can drop one later."
       >
         <div className="grid gap-3">
           {MEASURES.map((item) => (
@@ -253,8 +276,9 @@ function StepBody({
         >
           <span className="text-lg">Temperatures here swing hard</span>
           <span className="mt-1 block text-sm text-muted">
-            Prefer a part that stays honest in extreme heat or cold. Everyday parts are simpler and
-            add a VOC reading the precision parts skip.
+            Prefer a sensor that stays accurate in extreme heat or cold. Everyday sensors are simpler
+            and also report volatile organic compounds (VOCs) in the air, which the extreme-weather
+            sensors do not.
           </span>
         </button>
       </StepFrame>
@@ -264,7 +288,7 @@ function StepBody({
     return (
       <StepFrame
         kicker="How many"
-        title="How many listening points?"
+        title="How many stations do you want?"
         body="Print time and the parts list scale with this number."
       >
         <div className="grid gap-3">
@@ -288,8 +312,8 @@ function StepBody({
         kicker="The place, again"
         title={
           answers.intent === "teach"
-            ? "What should people be able to notice?"
-            : "What has caught people off guard here?"
+            ? "What should people be able to notice at your site?"
+            : "What has caught people off guard at your site?"
         }
         body="Pick every pattern that is actually true. This is not a score."
       >
@@ -312,7 +336,7 @@ function StepBody({
     return (
       <StepFrame
         kicker="The people"
-        title="Who is this for, and what would better look like?"
+        title="Who is your station for, and what would better look like?"
         body="Three short groups. Choose at least one in each."
       >
         <Group label="Who needs to be able to use it?">
@@ -420,7 +444,8 @@ function ReviewStep({
       <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
         <Fact term="Path" detail={answers.intent ? intentLabel(answers.intent) : ""} />
         <Fact term="Place" detail={labelOf(PLACES, answers.place)} />
-        <Fact term="Link" detail={labelOf(LINKS, answers.link)} />
+        <Fact term="Power" detail={labelOf(POWERS, answers.power)} />
+        <Fact term="Connection" detail={labelOf(LINKS, answers.link)} />
         <Fact term="Stations" detail={labelOf(COUNTS, answers.count)} />
         <Fact
           term="Noticing"

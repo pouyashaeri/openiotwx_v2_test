@@ -12,7 +12,14 @@ import {
   WHO,
   intentLabel,
 } from "./catalog.ts";
-import { formatMoney, knownAddonCents, recommend, type Recommendation } from "./recommend.ts";
+import {
+  formatMoney,
+  isMidRange,
+  isNearBuildings,
+  knownAddonCents,
+  recommend,
+  type Recommendation,
+} from "./recommend.ts";
 import type {
   Answers,
   GapId,
@@ -623,11 +630,13 @@ function linkScore(answers: Answers): number {
   const place = answers.place;
   const link = answers.link;
   if (!place || !link) return 40;
+  const near = isNearBuildings(place);
+  const mid = isMidRange(place);
   if (link === "ham") return place === "extreme" ? 70 : 45;
-  if (link === "lora") return place === "urban" ? 75 : 92;
-  if (link === "cell") return place === "extreme" ? 55 : place === "urban" ? 70 : 90;
-  if (link === "poe") return place === "urban" ? 90 : 50;
-  if (link === "wifi") return place === "urban" ? 92 : place === "edge" ? 68 : 48;
+  if (link === "lora") return near ? 75 : 92;
+  if (link === "cell") return place === "extreme" ? 55 : near ? 70 : 90;
+  if (link === "poe") return near ? 90 : 50;
+  if (link === "wifi") return near ? 92 : mid ? 68 : 48;
   return 60;
 }
 
