@@ -1,36 +1,22 @@
 import type { ChatConfig } from "./llm.ts";
 
-const KEY = "openiotwx-chat-config-v1";
-
-// A model running on the user's own computer through Ollama. Change these in the chat panel's
-// settings, or set VITE_CHAT_ENDPOINT / VITE_CHAT_MODEL at build time to point at a server later.
+/**
+ * Where the language model lives. It is set when the site is built, by the site's owner, and is
+ * never read from the visitor's browser or computer. Nothing here points at the visitor's own
+ * machine, and no model runs on it.
+ *
+ *   VITE_CHAT_ENDPOINT  base URL of a server that speaks the OpenAI chat API (https://.../v1)
+ *   VITE_CHAT_MODEL     the model name that server should use
+ *
+ * With no endpoint set, the chat uses plain keyword matching and makes no model requests at all.
+ *
+ * Do not put a secret key in a VITE_ variable: everything with that prefix is shipped to the
+ * browser. Put the key on the server, or on a small proxy in front of it.
+ */
 const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {};
 
-export const DEFAULT_CONFIG: ChatConfig = {
-  endpoint: env.VITE_CHAT_ENDPOINT || "http://localhost:11434/v1",
-  model: env.VITE_CHAT_MODEL || "qwen2.5:3b",
-  apiKey: "",
-};
+const endpoint = (env.VITE_CHAT_ENDPOINT ?? "").trim().replace(/\/+$/, "");
 
-export function loadConfig(): ChatConfig {
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    if (!raw) return DEFAULT_CONFIG;
-    const saved = JSON.parse(raw) as Partial<ChatConfig>;
-    return {
-      endpoint: (saved.endpoint || DEFAULT_CONFIG.endpoint).replace(/\/+$/, ""),
-      model: saved.model || DEFAULT_CONFIG.model,
-      apiKey: saved.apiKey ?? "",
-    };
-  } catch {
-    return DEFAULT_CONFIG;
-  }
-}
-
-export function saveConfig(config: ChatConfig): void {
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(config));
-  } catch {
-    // Private windows can refuse storage. The settings then last for this visit only.
-  }
-}
+export const CHAT_CONFIG: ChatConfig | null = endpoint
+  ? { endpoint, model: (env.VITE_CHAT_MODEL ?? "").trim() || "qwen2.5:3b" }
+  : null;

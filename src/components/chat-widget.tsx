@@ -1,9 +1,9 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { Maximize2, MessageCircle, Minimize2, RotateCcw, Send, Settings, X } from "lucide-react";
+import { Maximize2, MessageCircle, Minimize2, RotateCcw, Send, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import chatAvatar from "@/assets/chat-avatar.png";
-import { DEFAULT_CONFIG, loadConfig, saveConfig } from "@/lib/chat/config";
+import { CHAT_CONFIG } from "@/lib/chat/config";
 import {
   allIds,
   applySelection,
@@ -21,12 +21,6 @@ import { cn } from "@/lib/utils";
 type Message = { id: number; role: "bot" | "user"; text: string };
 type Status = "checking" | "model" | "simple";
 
-const OLLAMA_HELP = `1. Install Ollama from ollama.com
-2. In a terminal: ollama pull qwen2.5:3b
-3. Let this site talk to it (PowerShell, once):
-   setx OLLAMA_ORIGINS "http://localhost:8080,http://127.0.0.1:8080,https://pouyashaeri.github.io"
-4. Quit Ollama from the tray and start it again.`;
-
 export function ChatWidget() {
   const navigate = useNavigate();
   const path = useRouterState({ select: (state) => state.location.pathname });
@@ -41,12 +35,12 @@ export function ChatWidget() {
   // Choices ticked on a list question, before Send is pressed.
   const [picked, setPicked] = useState<string[]>([]);
   const [typedId, setTypedId] = useState<number | null>(null);
-  const [config, setConfig] = useState<ChatConfig>(DEFAULT_CONFIG);
-  const [status, setStatus] = useState<Status>("checking");
-  const [statusNote, setStatusNote] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
+  // Basic (keyword) matching unless the site was built with a model server to talk to.
+  const [status, setStatus] = useState<Status>(CHAT_CONFIG ? "checking" : "simple");
   const [expanded, setExpanded] = useState(false);
-  const modelDown = useRef(false);
+  // True while the window plays its closing animation, just before it is removed.
+  const [closing, setClosing] = useState(false);
+  const modelDown = useRef(!CHAT_CONFIG);
   const nextId = useRef(1);
   const scroller = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -58,23 +52,13 @@ export function ChatWidget() {
   }, []);
 
   const checkModel = useCallback(async (cfg: ChatConfig) => {
-    setStatus("checking");
     const result = await probe(cfg);
-    modelDown.current = !result.ok;
-    if (!result.ok) {
-      setStatus("simple");
-      setStatusNote(result.error ?? "");
-    } else if (
-      result.models.length &&
-      !result.models.some((id) => id === cfg.model || id.startsWith(`${cfg.model}:`))
-    ) {
-      modelDown.current = true;
-      setStatus("simple");
-      setStatusNote(`The server is running, but it does not have the model "${cfg.model}" yet.`);
-    } else {
-      setStatus("model");
-      setStatusNote("");
-    }
+    const hasModel =
+      result.ok &&
+      (result.models.length === 0 ||
+        result.models.some((id) => id === cfg.model || id.startsWith(`${cfg.model}:`)));
+    modelDown.current = !hasModel;
+    setStatus(hasModel ? "model" : "simple");
   }, []);
 
   const start = useCallback(() => {
@@ -86,13 +70,11 @@ export function ChatWidget() {
     setMessages([{ id: nextId.current++, role: "bot", text: turn.reply }]);
   }, []);
 
-  // First open: load the saved settings, say hello, and look for a model in the background.
+  // First open: say hello, and, only if the site has a model server, check that it is up.
   useEffect(() => {
     if (!open || messages.length > 0) return;
-    const cfg = loadConfig();
-    setConfig(cfg);
     start();
-    void checkModel(cfg);
+    if (CHAT_CONFIG) void checkModel(CHAT_CONFIG);
   }, [open, messages.length, start, checkModel]);
 
   useEffect(() => {
@@ -101,27 +83,49 @@ export function ChatWidget() {
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
-  }, [messages, busy, typedId, showSettings, picked.length]);
+  }, [messages, busy, typedId, picked.length]);
+
+  const finishClose = useCallback(() => {
+    setOpen(false);
+    setClosing(false);
+  }, []);
+
+  const requestClose = useCallback(() => {
+    if (closing) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      finishClose();
+      return;
+    }
+    setClosing(true);
+  }, [closing, finishClose]);
+
+  // Safety net: if the browser never reports the end of the animation, still close.
+  useEffect(() => {
+    if (!closing) return;
+    const timer = window.setTimeout(finishClose, 400);
+    return () => window.clearTimeout(timer);
+  }, [closing, finishClose]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       if (expanded) setExpanded(false);
-      else setOpen(false);
+      else requestClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, expanded]);
+  }, [open, expanded, requestClose]);
 
   const extractor = useMemo(
     () =>
-      createExtractor(config, (reason) => {
-        modelDown.current = true;
-        setStatus("simple");
-        setStatusNote(reason);
-      }),
-    [config],
+      CHAT_CONFIG
+        ? createExtractor(CHAT_CONFIG, () => {
+            modelDown.current = true;
+            setStatus("simple");
+          })
+        : undefined,
+    [],
   );
 
   const askingKey = asking?.key ?? null;
@@ -175,20 +179,9 @@ export function ChatWidget() {
     draft.patchAnswers(answers);
     draft.setSiteName(siteName.trim());
     draft.setStep("review");
-    setOpen(false);
+    requestClose();
     toast.success("Draft plan written from our chat");
     void navigate({ to: "/plan" });
-  }
-
-  async function saveSettings(next: ChatConfig) {
-    const clean = {
-      ...next,
-      endpoint: next.endpoint.trim().replace(/\/+$/, ""),
-      model: next.model.trim(),
-    };
-    setConfig(clean);
-    saveConfig(clean);
-    await checkModel(clean);
   }
 
   const rows = summarize(chat);
@@ -218,9 +211,14 @@ export function ChatWidget() {
       role="dialog"
       aria-label="Plan your station by chatting"
       data-expanded={expanded}
+      onAnimationEnd={(event) => {
+        if (event.target === event.currentTarget && event.animationName === "chat-pop-out")
+          finishClose();
+      }}
       className={cn(
         "group/chat no-print fixed z-50 flex flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-2xl",
         "transition-[width,height,right,bottom] duration-300 ease-out motion-reduce:transition-none",
+        closing ? "chat-pop-out" : "chat-pop",
         expanded
           ? "bottom-3 right-3 h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)]"
           : "bottom-3 right-3 h-[min(42rem,calc(100dvh-5rem))] w-[calc(100%-1.5rem)] sm:bottom-5 sm:right-5 sm:w-[min(32rem,calc(100%-2.5rem))]",
@@ -229,24 +227,6 @@ export function ChatWidget() {
       <header className="flex items-center justify-between gap-2 bg-navy px-4 py-3 text-white">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">Plan with a chat</p>
-          <p className="flex items-center gap-1.5 text-xs text-blue-100/75">
-            <span
-              className={cn(
-                "size-1.5 rounded-full",
-                status === "model"
-                  ? "bg-emerald-400"
-                  : status === "simple"
-                    ? "bg-amber-300"
-                    : "bg-blue-300",
-              )}
-              aria-hidden="true"
-            />
-            {status === "model"
-              ? "Reading your answers with a local model"
-              : status === "simple"
-                ? "Simple matching (no model connected)"
-                : "Looking for a model…"}
-          </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <IconButton
@@ -256,9 +236,6 @@ export function ChatWidget() {
             }}
           >
             <RotateCcw className="size-4" aria-hidden="true" />
-          </IconButton>
-          <IconButton label="Chat settings" onClick={() => setShowSettings((v) => !v)}>
-            <Settings className="size-4" aria-hidden="true" />
           </IconButton>
           <IconButton
             label={expanded ? "Exit full screen" : "Full screen"}
@@ -271,7 +248,7 @@ export function ChatWidget() {
               <Maximize2 className="size-4" aria-hidden="true" />
             )}
           </IconButton>
-          <IconButton label="Close the chat" onClick={() => setOpen(false)}>
+          <IconButton label="Close the chat" onClick={requestClose}>
             <X className="size-4" aria-hidden="true" />
           </IconButton>
         </div>
@@ -279,14 +256,11 @@ export function ChatWidget() {
 
       <div ref={scroller} className="flex-1 overflow-y-auto px-4 py-4" aria-live="polite">
         <div className="mx-auto w-full space-y-3 group-data-[expanded=true]/chat:max-w-3xl">
-          {showSettings ? (
-            <Settings_ config={config} status={status} note={statusNote} onSave={saveSettings} />
-          ) : null}
-
           {messages.map((message) => (
             <Bubble
               key={message.id}
               message={message}
+              status={status}
               animate={
                 message.role === "bot" && message.id === lastBot?.id && typedId !== message.id
               }
@@ -296,7 +270,7 @@ export function ChatWidget() {
 
           {busy ? (
             <div className="flex items-end gap-2">
-              <Avatar />
+              <Avatar status={status} />
               <div
                 className="flex w-fit items-center gap-1 rounded-lg rounded-bl-sm bg-surface-2 px-3 py-3"
                 aria-label="Thinking"
@@ -485,10 +459,12 @@ function Bubble({
   message,
   animate,
   onDone,
+  status,
 }: {
   message: Message;
   animate: boolean;
   onDone: () => void;
+  status: Status;
 }) {
   if (message.role === "user") {
     return (
@@ -499,7 +475,7 @@ function Bubble({
   }
   return (
     <div className="flex items-end gap-2">
-      <Avatar />
+      <Avatar status={status} />
       <div className="w-fit max-w-[calc(100%-3.5rem)] rounded-lg rounded-bl-sm bg-surface-2 px-3 py-2 text-sm text-ink group-data-[expanded=true]/chat:text-base">
         {animate ? <Typed text={message.text} onDone={onDone} /> : message.text}
       </div>
@@ -507,17 +483,33 @@ function Bubble({
   );
 }
 
-/** The assistant's picture, beside everything it says. Decorative: the bubble carries the text. */
-function Avatar() {
+/**
+ * The assistant's picture, beside everything it says. The small dot at its lower right shows how
+ * it is reading answers: green with a model, amber with basic keyword matching.
+ */
+function Avatar({ status }: { status: Status }) {
   return (
-    <img
-      src={chatAvatar}
-      alt=""
-      width={44}
-      height={44}
-      className="size-11 shrink-0 rounded-full group-data-[expanded=true]/chat:size-12"
-      draggable={false}
-    />
+    <span className="relative shrink-0">
+      <img
+        src={chatAvatar}
+        alt=""
+        width={44}
+        height={44}
+        className="size-11 rounded-full group-data-[expanded=true]/chat:size-12"
+        draggable={false}
+      />
+      <span
+        className={cn(
+          "absolute bottom-0 right-0 size-3 rounded-full ring-2 ring-surface-2",
+          status === "model"
+            ? "bg-emerald-500"
+            : status === "simple"
+              ? "bg-amber-400"
+              : "bg-blue-400",
+        )}
+        aria-hidden="true"
+      />
+    </span>
   );
 }
 
@@ -556,92 +548,5 @@ function Typed({ text, onDone }: { text: string; onDone: () => void }) {
         />
       ) : null}
     </>
-  );
-}
-
-function Settings_({
-  config,
-  status,
-  note,
-  onSave,
-}: {
-  config: ChatConfig;
-  status: Status;
-  note: string;
-  onSave: (config: ChatConfig) => Promise<void>;
-}) {
-  const [draft, setDraft] = useState(config);
-  const [testing, setTesting] = useState(false);
-  const field = "mt-1 min-h-10 w-full rounded-md border border-line bg-panel px-3 text-sm text-ink";
-  return (
-    <div className="rounded-lg border border-line bg-panel p-3 text-sm">
-      <p className="eyebrow">Model connection</p>
-      <p className="mt-1 text-xs text-muted">
-        The chat reads your answers with a small language model. It runs on this computer, so your
-        answers stay here. Without one it still works, with simpler matching.
-      </p>
-      <label className="mt-3 block text-xs text-muted">
-        Model address
-        <input
-          className={field}
-          value={draft.endpoint}
-          onChange={(e) => setDraft({ ...draft, endpoint: e.target.value })}
-          spellCheck={false}
-        />
-      </label>
-      <label className="mt-2 block text-xs text-muted">
-        Model name
-        <input
-          className={field}
-          value={draft.model}
-          onChange={(e) => setDraft({ ...draft, model: e.target.value })}
-          spellCheck={false}
-        />
-      </label>
-      <label className="mt-2 block text-xs text-muted">
-        Key (only for a hosted server)
-        <input
-          className={field}
-          type="password"
-          autoComplete="off"
-          value={draft.apiKey}
-          onChange={(e) => setDraft({ ...draft, apiKey: e.target.value })}
-        />
-      </label>
-      <div className="mt-3 flex items-center gap-2">
-        <button
-          type="button"
-          disabled={testing}
-          onClick={async () => {
-            setTesting(true);
-            await onSave(draft);
-            setTesting(false);
-          }}
-          className="min-h-10 rounded-md bg-brand px-3 text-sm font-medium text-surface hover:bg-brand-deep disabled:opacity-50"
-        >
-          {testing ? "Testing…" : "Save and test"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setDraft(DEFAULT_CONFIG)}
-          className="min-h-10 rounded-md px-3 text-sm text-muted hover:text-ink"
-        >
-          Reset
-        </button>
-      </div>
-      <p className="mt-2 text-xs" role="status">
-        {status === "model"
-          ? "Connected."
-          : status === "simple"
-            ? note || "Not connected."
-            : "Testing…"}
-      </p>
-      <details className="mt-2 text-xs text-muted">
-        <summary className="cursor-pointer">How to run a model on your computer</summary>
-        <pre className="mt-2 whitespace-pre-wrap font-mono text-[11px] leading-relaxed">
-          {OLLAMA_HELP}
-        </pre>
-      </details>
-    </div>
   );
 }

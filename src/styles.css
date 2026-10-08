@@ -94,6 +94,41 @@ header.sticky {
   view-transition-name: site-header;
 }
 
+/* The chat window opening: grows out of the chat button's corner while fading in. */
+@keyframes chat-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.chat-pop {
+  transform-origin: bottom right;
+  animation: chat-pop 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Closing plays the opening backwards: shrinks and fades back toward the chat button. */
+@keyframes chat-pop-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(14px) scale(0.92);
+  }
+}
+
+.chat-pop-out {
+  transform-origin: bottom right;
+  animation: chat-pop-out 200ms cubic-bezier(0.4, 0, 0.8, 0.4) forwards;
+  pointer-events: none;
+}
+
 @keyframes step-rise {
   from {
     opacity: 0;
@@ -114,7 +149,9 @@ header.sticky {
     scroll-behavior: auto;
   }
 
-  .step-in {
+  .step-in,
+  .chat-pop,
+  .chat-pop-out {
     animation: none;
   }
 

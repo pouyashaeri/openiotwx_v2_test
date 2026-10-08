@@ -2,17 +2,15 @@ import type { Extractor } from "./engine.ts";
 import { FIELD_BY_KEY, FIELDS, type FieldKey } from "./spec.ts";
 
 /**
- * Talks to any OpenAI-compatible chat endpoint. Today that is a model running on the user's own
- * machine (Ollama serves this API at http://localhost:11434/v1). Later it can be a hosted server:
- * only the address changes. Nothing in this file is specific to one model or vendor.
+ * Talks to any OpenAI-compatible chat endpoint on a server the site's owner runs. The address is
+ * fixed at build time (see config.ts). Nothing here runs a model in the visitor's browser or on
+ * their device, and nothing is specific to one model or vendor.
  */
 
 export type ChatConfig = {
   /** Base URL that serves /chat/completions and /models, with no trailing slash. */
   endpoint: string;
   model: string;
-  /** Only needed for a hosted server. Leave empty for a local model. */
-  apiKey: string;
 };
 
 const PROMPT_FIELDS: FieldKey[] = FIELDS.filter((field) => field.key !== "siteName").map(
@@ -45,10 +43,8 @@ export function buildSystemPrompt(currentKey: FieldKey | null): string {
   ].join("\n");
 }
 
-function headers(config: ChatConfig): Record<string, string> {
-  const out: Record<string, string> = { "Content-Type": "application/json" };
-  if (config.apiKey) out.Authorization = `Bearer ${config.apiKey}`;
-  return out;
+function headers(): Record<string, string> {
+  return { "Content-Type": "application/json" };
 }
 
 /** Pull a JSON object out of a model reply, tolerating code fences and stray words around it. */
@@ -81,7 +77,7 @@ export async function probe(config: ChatConfig): Promise<Probe> {
   try {
     const response = await fetchWithTimeout(
       `${config.endpoint}/models`,
-      { headers: headers(config) },
+      { headers: headers() },
       2500,
     );
     if (!response.ok)
@@ -106,7 +102,7 @@ export function createExtractor(config: ChatConfig, onFail?: (reason: string) =>
         `${config.endpoint}/chat/completions`,
         {
           method: "POST",
-          headers: headers(config),
+          headers: headers(),
           body: JSON.stringify({
             model: config.model,
             temperature: 0,
